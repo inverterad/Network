@@ -1,3 +1,53 @@
+# 2026-01-06
+En vacker dag ska jag bli klar med detta. Uppgiften är sedan länge inlämnad i skolan men jag återskapar den här från minne. Och med pauserna tar det lite tid.
+
+Nu är det dags att implementera möjlighet att använda SSH för att koppla upp sig mot router, så jag använder följande kommando:
+
+    en
+    conf t
+    ip domain-name GBG
+    crypto key generate rsa general-keys modulus 4096
+    ip ssh version 2
+    line vty 0 15
+    exec-timeout 2
+    login local
+    transport input ssh
+    exit
+    enable secret 1234
+    username admin enable secret 1234
+
+
+Dags att applicera lite ACLs så att bara administratörer kommer åt routern:
+
+    en
+    conf t
+    ip access-list standard ADMIN
+    permit 172.16.2.128 0.0.0.63
+    remark allow admin and deny everyone else
+    exit
+    line vty 0 15
+    access-class ADMIN in
+
+Nu ska jag göra en ACL så att gästnätverket är isolerat från de övriga datorerna på nätverket och framtida nätverk. Men de ska kunna komma åt internet. Följande kod kör jag på routerns CLI:
+    
+    en
+    conf t
+    ip access-list extended GUEST
+    deny ip 172.16.2.64 0.0.0.63 172.16.2.0 0.0.0.63
+    deny ip 172.16.2.64 0.0.0.63 172.16.2.128 0.0.0.63
+    deny ip 172.16.2.64 0.0.0.63 192.168.0.0 0.0.255.255
+    deny ip 172.16.2.64 0.0.0.63 10.0.0.0 0.255.255.255
+    permit ip any any
+    remark guests can only access internet and eachother
+    exit
+    interface gig0/0.20
+    ip access-group GUEST in
+
+
+
+
+
+
 # 2025-11-21
 Tog en stund att återkomma hit.
 Men nu implementerar jag SVI och en enkel ACL på alla switchar i nätverket.
